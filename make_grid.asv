@@ -1,0 +1,63 @@
+function [rho,ux,uy,uz,grid] = make_grid()
+
+%%% Initialize memory %%%
+%[DEFAULT] Setup Grid: (Boundary Grid):
+grid.Nx = 35; % Only specified here
+grid.Ny = 35;
+grid.xmin = 0;
+grid.xmax = 1.0;
+grid.ymin = 0;
+grid.ymax = 1.0;
+grid.time = 0;
+grid.t_max = 0.7;
+grid.Output_interval = 1000;
+Nx = grid.Nx;
+Ny = grid.Ny;
+
+%[DEFAULT] Constants, updated in IC.m
+grid.iter = 1;
+
+%[DEFAULT] Grids, updated in IC.m
+grid.dx = (grid.xmax - grid.xmin)/grid.Nx;
+grid.dy = (grid.ymax - grid.ymin)/grid.Ny;
+grid.time = 0;
+grid.cfl = 0.98; %clf = udt/dx <= C_max
+grid.dt = (1/4)*0.98*(1/sqrt(2))*grid.dx/50;
+grid.NT = ceil(grid.t_max/grid.dt);
+grid.Lx = (grid.xmax - grid.xmin);
+grid.Ly = (grid.ymax - grid.ymin);
+
+%Grid
+grid.x = linspace(grid.xmin,grid.xmax,Nx);
+
+%Quantities
+for j = 1:grid.Nx
+    for k = 1:grid.Ny
+        rho = 1.5 + sin((2*grid.x*pi)*((Nx-1)/Nx)/(grid.L));
+        ux  = 1.5 + sin((2*grid.x*pi)*((Nx-1)/Nx)/(grid.L));
+        uy  = 2.5 + sin((2*grid.x*pi)*((Nx-1)/Nx)/(grid.L));
+        uz  = 2.0 + sin((2*grid.x*pi)*((Nx-1)/Nx)/(grid.L));
+    end
+end
+
+
+%Right and left
+grid.R = mod( linspace(1,Nx,Nx), Nx) + 1; %Good
+grid.L = mod( linspace(-1,Nx-2,Nx), Nx) + 1; %Good
+
+% KE vs t
+grid.E_vs_t = zeros(1,grid.NT);
+grid.time_vec = linspace(0,grid.t_max,grid.NT);
+
+gamma = sqrt(1+ux.^2+uy.^2+uz.^2);
+KE = (gamma - 1).*rho;
+grid.E0 = sum(KE).*grid.dx;
+
+%If the speed of light is violated by the IC
+V2 = sqrt( (ux.^2+uy.^2+uz.^2)./(gamma.*gamma) );
+if max(V2) > 1
+    fprintf("LIGHT SPEED VIOLATION in IC\n");
+    exit();
+end
+
+end
